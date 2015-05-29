@@ -4,7 +4,7 @@ A Clojure library with helpers for my live coding sets.
 
 ## Usage
 just add a `checkouts` directory to your project
-and add this as submodule `git submodule add https://github.com/magicmonty/overtone.helpers.git`
+and add this as submodule `git submodule add https://github.com/lambdaphonic/overtone.helpers.git`
 
 ## License
 
