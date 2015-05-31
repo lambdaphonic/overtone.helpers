@@ -57,11 +57,45 @@
   (metro (+ (metro) beat)))
 
 (defn beat? [beat expected-beat cycle-len]
+  "
+  checks, if the current beat is the expected beat in a cycle (1-based)
+
+  (beat? 0 1 4) ; true
+
+  Cycle length of 4 beats per cycle:
+
+  (beat? 0 4 4) ; false
+  (beat? 1 4 4) ; false
+  (beat? 2 4 4) ; false
+  (beat? 3 4 4) ; true
+  (beat? 4 4 4) ; false
+  (beat? 5 4 4) ; false
+  (beat? 6 4 4) ; false
+  (beat? 7 4 4) ; true
+  "
   (== expected-beat (+ 1 (mod beat cycle-len))))
 
+
 (defn on-beat [beat expected-beat cycle-len fun]
+  "evaluates fun, if the current beat is the expected beat in a given cycle"
   (if (beat beat expected-beat cycle-len)
     (if (ifn? fun)
       (fun)
       fun)))
+
+
+(defn beat-map [base-time beat next-beat step fun]
+  "
+  maps a range of steps between between 0 and the difference
+  of next-beat and beat and runs fun with the given beat offset
+  to the base time
+
+  example:
+  (beat-map (now) 0 1 0.25 #(println %)) ; prints 0, 0.25, 0.5 and 0.75 in the time of a beat distributed evenly over the beat
+  "
+  (dorun
+    (map #(let [b (+ beat %)
+                bt (+ base-time (mspb metro %))]
+            (at bt (fun b)))
+         (range 0 (- next-beat beat) step))))
 
