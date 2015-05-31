@@ -1,6 +1,8 @@
 (ns lambdaphonic.overtone.helpers
   (:use [overtone.music.pitch]
-        [overtone.algo.trig]))
+        [overtone.algo.trig]
+        [overtone.at-at]))
+
 
 (defn scale-fieldk [nkey sname]
   (scale-field (keyword (str (first (rest (str nkey))))) sname))
@@ -84,7 +86,7 @@
       fun)))
 
 
-(defn beat-map [base-time beat next-beat step fun]
+(defn beat-map [metro base-time beat next-beat step fun]
   "
   maps a range of steps between between 0 and the difference
   of next-beat and beat and runs fun with the given beat offset
