@@ -1,7 +1,7 @@
 (ns lambdaphonic.overtone.helpers
   (:use [overtone.music.pitch]
         [overtone.algo.trig]
-        [overtone.at-at]))
+        [overtone.sc.server]))
 
 
 (defn scale-fieldk [nkey sname]
