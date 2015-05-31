@@ -80,7 +80,7 @@
 
 (defn on-beat [beat expected-beat cycle-len fun]
   "evaluates fun, if the current beat is the expected beat in a given cycle"
-  (if (beat beat expected-beat cycle-len)
+  (if (beat? beat expected-beat cycle-len)
     (if (ifn? fun)
       (fun)
       fun)))
