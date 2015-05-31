@@ -55,3 +55,13 @@
 (defn atbeat [metro beat]
   "returns the time with the given beat offset for the given metronome"
   (metro (+ (metro) beat)))
+
+(defn beat? [beat expected-beat cycle-len]
+  (== expected-beat (+ 1 (mod beat cycle-len))))
+
+(defn on-beat [beat expected-beat cycle-len fun]
+  (if (beat beat expected-beat cycle-len)
+    (if (ifn? fun)
+      (fun)
+      fun)))
+
