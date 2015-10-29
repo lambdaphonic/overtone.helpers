@@ -196,8 +196,8 @@
   calculates the offsets for a list of durs
 
   Example:
-  (calc-offset [1 1 1 1]) -> (0 1 2 3)
-  (calc-offset [0.25 0.25 0.25 0.25] -> (0 0.25 0.5 0.75)
+  (calc-offsets [1 1 1 1]) -> (0 1 2 3)
+  (calc-offsets [0.25 0.25 0.25 0.25] -> (0 0.25 0.5 0.75)
   "
   (let
       [reduced (reductions + 0 durs)
@@ -275,7 +275,7 @@
                     15 [0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.5]
                     16 [0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25]
                     [8])
-        offsets (calc-offset durations)]
+        offsets (calc-offsets durations)]
     (map
       (fn [o] {:offset o :duration d})
       offsets
