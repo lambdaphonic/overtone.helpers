@@ -277,6 +277,6 @@
                     [8])
         offsets (calc-offsets durations)]
     (map
-      (fn [o] {:offset o :duration d})
+      (fn [o d] {:offset o :duration d})
       offsets
       durations)))
