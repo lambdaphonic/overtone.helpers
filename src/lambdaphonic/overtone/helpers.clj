@@ -337,4 +337,5 @@
   ([pulses steps over-beats]
    (let [per-step (/ over-beats steps)
          e (euclid-string pulses steps)]
-     (map #(* % per-step) e)))))
+     (map #(* % per-step) e))))
+
