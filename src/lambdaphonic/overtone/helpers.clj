@@ -280,3 +280,61 @@
       (fn [o d] {:offset o :duration d})
       offsets
       durations)))
+
+
+(defn- bjorklund [sequences]
+  (let [length-of-first-element (count (first sequences))
+        main-seqs (filter
+                    (fn [s]
+                      ( and
+                        (or
+                          (not (= 1 (count s)))
+                          (= 1 (nth s 0)))
+                        (= length-of-first-element (count s))))
+                    sequences)
+        main-seqs-length (count main-seqs)
+        rest-seqs (drop main-seqs-length sequences)
+        rest-length (count rest-seqs)
+        distribute (take (min main-seqs-length rest-length) rest-seqs)
+        remainder (if
+                    (>= rest-length main-seqs-length)
+                    (drop main-seqs-length rest-seqs)
+                    (drop rest-length main-seqs))]
+    (if
+      (and
+        (> length-of-first-element 1)
+        (<= rest-length 1))
+      [(flatten sequences)]
+      (bjorklund
+        (concat
+          (map
+            #(concat (nth main-seqs %) (nth distribute %))
+            (range 0 (count distribute)))
+          remainder)))))
+
+(defn euclid [pulses steps]
+  "Evenly distributes a list of pulses and pauses"
+   (let [pauses (- steps pulses)
+         pulse-seq (repeat pulses '(1))
+         pause-seq (repeat pauses '(0))
+         sequences (concat pulse-seq pause-seq)
+         result (if
+                  (empty? pause-seq)
+                  [(flatten sequences)]
+                  (bjorklund sequences))]
+     (nth result 0)))
+
+(defn euclid-string [pulses steps]
+  (let [r (reductions + (euclid pulses steps))]
+    (map
+      #(count (filter (fn [x] (= x %))
+                      r))
+      (distinct r))))
+
+(defn euclid-rhythm
+  ([pulses] (euclid-rhythm pulses 16))
+  ([pulses steps] (euclid-rhythm pulses steps 4))
+  ([pulses steps over-beats]
+   (let [per-step (/ over-beats steps)
+         e (euclid-string pulses steps)]
+     (map #(* % per-step) e)))))
