@@ -1,7 +1,8 @@
 (ns lambdaphonic.overtone.helpers
   (:use [overtone.music.pitch]
         [overtone.algo.trig]
-        [overtone.sc.server]))
+        [overtone.sc.server]
+        [overtone.algo.chance]))
 
 
 (defn scale-fieldk [nkey sname]
@@ -101,7 +102,6 @@
             (at bt (fun b)))
          (range 0 (- next-beat beat) step))))
 
-
 (defn alberti [chord]
   "
   Returns an alberti sequence:
@@ -157,7 +157,7 @@
   (let [n (vec (take 3 (cycle (sort notes))))]
     (alberti n)))
 
-(defn arp [arp-type notes]
+(defn arp
   "
   Arpeggiates the given notes
   possible arp-type values:
@@ -171,6 +171,7 @@
   (arp :updown [1 3 4 2])  -> (1 2 3 4 3 2)
   (arp :downup [1 3 4 2])  -> (4 3 2 1 2 3)
   "
+  [arp-type notes]
   (case arp-type
     :alberti (arp-alberti notes)
     :downup (arp-downup notes)
@@ -191,14 +192,15 @@
                      []))]
     (flatten (conj scl (map #(- % 12) (take (- (count scl) 1) scl))))))
 
-(defn calc-offsets [durs]
+(defn calc-offsets
   "
-  calculates the offsets for a list of durs
+  calculates the offsets for a list of durations
 
   Example:
   (calc-offsets [1 1 1 1]) -> (0 1 2 3)
   (calc-offsets [0.25 0.25 0.25 0.25] -> (0 0.25 0.5 0.75)
   "
+  [durs]
   (let
       [reduced (reductions + 0 durs)
        l (count reduced)]
@@ -220,7 +222,7 @@
      (if inc-value (+ current-value mul) current-value)
      (next-multiple-of mul (+ 1 current-value) false))))
 
-(defn next-bar [m bar-length]
+(defn next-bar
   "
   Gets the time of the next bar given a metronome function and a bar-length in beats
 
@@ -228,59 +230,10 @@
   (def metro (metronome 120))
   (next-bar metro 4) -> returns the time of the next bar, given the bar length is 4 beats
   "
+  [m bar-length]
   (let [current-beat (m)
         mul (* bar-length 4)]
     (next-multiple-of mul current-beat)))
-
-(defn note-pattern [notes durs note-changes]
-  "
-  calculates a pattern of notes with duration and offset.
-
-  notes: the notes to make the pattern for
-  durs: the note durations
-  note-changes: the pattern, when the notes change
-  "
-  (let [note-offsets (map (fn [o n] [o, n]) (calc-offsets note-changes) (cycle notes))
-        dur-offsets (calc-offsets durs)]
-    (map
-      (fn [o d]
-        {:offset o :duration d :note ((last (filter (fn [item] (<= (item 0) o)) note-offsets)) 1)})
-      dur-offsets
-      durs)))
-
-(defn rhythm [idx]
-  "
-  Generates different rhythm patterns (idx can be from 0 to 16).
-  All patterns are exactly 4 beats long
-
-  Example:
-  (rhythm 2) -> ({:offset 0 :duration 2} {:offset 2 :duration 2})
-  "
-  (let [n (mod idx 17)
-        durations (case n
-                    1 [4]
-                    2 [2, 2]
-                    3 [1.25, 1.25, 1.5]
-                    4 [1, 1, 1, 1]
-                    5 [0.75, 0.75, 0.75, 0.75, 1]
-                    6 [0.75, 0.75, 0.5, 0.75, 0.75, 0.5]
-                    7 [0.5, 0.5, 0.75, 0.5, 0.5, 0.75, 0.5]
-                    8 [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
-                    9 [0.5, 0.5, 0.5, 0.25, 0.5, 0.5, 0.5, 0.25, 0.5]
-                    10 [0.5, 0.25, 0.5, 0.25, 0.5, 0.5, 0.25, 0.5, 0.25, 0.5]
-                    11 [0.25, 0.5, 0.25, 0.5, 0.25, 0.5, 0.25, 0.5, 0.25, 0.5, 0.25]
-                    12 [0.25, 0.25, 0.5, 0.25, 0.25, 0.5, 0.25, 0.25, 0.5, 0.25, 0.25, 0.5]
-                    13 [0.25, 0.25, 0.25, 0.5, 0.25, 0.25, 0.25, 0.5, 0.25, 0.25, 0.25, 0.5, 0.25]
-                    14 [0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.5, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.5]
-                    15 [0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.5]
-                    16 [0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25]
-                    [8])
-        offsets (calc-offsets durations)]
-    (map
-      (fn [o d] {:offset o :duration d})
-      offsets
-      durations)))
-
 
 (defn- bjorklund [sequences]
   (let [length-of-first-element (count (first sequences))
@@ -312,8 +265,16 @@
             (range 0 (count distribute)))
           remainder)))))
 
-(defn euclid [pulses steps]
-  "Evenly distributes a list of pulses and pauses"
+(defn euclid
+  "
+  Evenly distributes a list of pulses and pauses over a
+  given amount of steps
+
+  Example:
+  (euclid 4 16)
+    => (1 0 0 0 1 0 0 0 1 0 0 0 1 0 0 0)
+  "
+  [pulses steps]
    (let [pauses (- steps pulses)
          pulse-seq (repeat pulses '(1))
          pause-seq (repeat pauses '(0))
@@ -324,7 +285,8 @@
                   (bjorklund sequences))]
      (nth result 0)))
 
-(defn euclid-string [pulses steps]
+(defn euclid-string
+  [pulses steps]
   (let [r (reductions + (euclid pulses steps))]
     (map
       #(count (filter (fn [x] (= x %))
@@ -332,10 +294,140 @@
       (distinct r))))
 
 (defn euclid-rhythm
+  "
+  Creates a rhythm structure for euclidean rhythms
+  "
   ([pulses] (euclid-rhythm pulses 16))
   ([pulses steps] (euclid-rhythm pulses steps 4))
   ([pulses steps over-beats]
    (let [per-step (/ over-beats steps)
          e (euclid-string pulses steps)]
      (map #(* % per-step) e))))
+
+(defn gcd
+  "Calculates the greatest common divisor of both arguments"
+  [m n]
+  (if (= n 0) m (gcd n (mod m n))))
+
+(defn lcf
+  "Calculates the lowest common factor of both arguments"
+  [m n]
+  (let [o (gcd m n)]
+    (/ (* m n) o)))
+
+(defn cycle-combine
+  "
+  Combines two collections as such that both collections
+  are cycled completely.
+
+  Examples:
+
+  (cycle-combine [1 2] [1 2 3])
+    => ([1 1] [2 2] [1 3] [2 1] [1 2] [2 3])
+
+  (cycle-combine [1 2 3] [1 2])
+    => ([1 1] [2 2] [3 1] [1 2] [2 1] [3 2])
+  "
+  [coll1 coll2]
+  (let [l1 (count coll1)
+        l2 (count coll2)
+        v (lcf l1 l2)
+        newcoll1 (take v (cycle coll1))
+        newcoll2 (take v (cycle coll2))]
+    (map
+      (fn [c1 c2] [c1 c2])
+      newcoll1
+      newcoll2)))
+
+(defn note-pattern
+  "
+  calculates a pattern of notes with duration and offset.
+
+  notes: the notes to make the pattern for
+  durs: the note durations
+  note-changes: the pattern, when the notes change
+  "
+  [notes durs note-changes]
+  (let [note-offsets (map (fn [o n] [o, n]) (calc-offsets note-changes) (cycle notes))
+        dur-offsets (calc-offsets durs)]
+    (map
+      (fn [o d]
+        {:offset o :duration d :note ((last (filter (fn [item] (<= (item 0) o)) note-offsets)) 1)})
+      dur-offsets
+      durs)))
+
+(defn markov-choose [chain last-chord]
+  (choose (or (chain last-chord) [last-chord])))
+
+(def CHORDTYPES
+  { :i [:i :m]
+    :I [:i :M]
+    :io [:i :dim]
+    :i+ [:i :augmented]
+
+    :ii [:ii :m]
+    :II [:ii :M]
+    :iio [:ii :dim]
+    :ii+ [:ii :augmented]
+
+    :iii [:iii :m]
+    :III [:iii :M]
+    :iiio [:iii :dim]
+    :iii+ [:iii :augmented]
+
+    :iv [:iv :m]
+    :IV [:iv :M]
+    :ivo [:iv :dim]
+    :iv+ [:iv :augmented]
+
+    :v [:v :m]
+    :V [:v :M]
+    :vo [:v :dim]
+    :v+ [:v :augmented]
+
+    :vi [:vi :m]
+    :VI [:vi :M]
+    :vio [:vi :dim]
+    :vi+ [:vi :augmented]
+
+    :vii [:vii :m]
+    :VII [:vii :M]
+    :viio [:vii :dim]
+    :vii+ [:vii :augmented]
+   })
+
+(defn- cadence-helper [scl deg tonic]
+  (chord (nth scl (- (degree->int deg) 1)) tonic))
+
+(defn- markov-major-cadence
+  [deg]
+  (let [chain
+        {:I [:ii :iii :IV :V :vi :viio]
+         :ii [:V :viio]
+         :iii [:vi]
+         :IV [:V :viio]
+         :V [:I]
+         :vi [:ii :IV]
+         :viio [:I :iii]}]
+    (markov-choose (chain deg))))
+
+(defn- markov-minor-cadence
+  [deg]
+  (let [chain
+        {:i [:VII :III :VI :iv :V]
+         :VII [:III]
+         :III [:VI]
+         :VI [:iio :iv]
+         :iio [:V :viio]
+         :iv [:V :viio :VII]
+         :V [:i]
+         :viio [:i]}]
+    (markov-choose (chain deg))))
+
+(defn markov-cadence-next [last-chord tonic]
+  (cond
+    (= tonic :m) (markov-minor-cadence last-chord)
+    (= tonic :minor) (markov-minor-cadence last-chord)
+    (= tonic :M) (markov-major-cadence last-chord)
+    (= tonic :major) (markov-major-cadence last-chord)))
 
